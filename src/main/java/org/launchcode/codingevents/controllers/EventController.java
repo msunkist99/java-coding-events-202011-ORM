@@ -2,8 +2,11 @@ package org.launchcode.codingevents.controllers;
 
 import org.launchcode.codingevents.data.EventCategoryRepository;
 import org.launchcode.codingevents.data.EventRepository;
+import org.launchcode.codingevents.data.TagRepository;
 import org.launchcode.codingevents.models.Event;
 import org.launchcode.codingevents.models.EventCategory;
+import org.launchcode.codingevents.models.Tag;
+import org.launchcode.codingevents.models.dto.EventTagDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -25,6 +28,9 @@ public class EventController {
 
     @Autowired
     private EventCategoryRepository eventCategoryRepository;
+
+    @Autowired
+    private TagRepository tagRepository;
 
     @GetMapping
     public String displayEvents(@RequestParam(required = false) Integer categoryId,
@@ -86,6 +92,49 @@ public class EventController {
         }
 
         return "redirect:";
+    }
+
+    @GetMapping("add-tag")      // handles get requests for events/add-tag@eventId=13
+    public String DisplayAddTagForm(@RequestParam Integer eventId,
+                                    Model model){
+        Optional<Event> result = eventRepository.findById(eventId);
+
+        if (!result.isEmpty()) {
+            Event event = result.get();
+
+            model.addAttribute("title", "Add Tag to: " + event.getName());
+            model.addAttribute("tags", tagRepository.findAll());
+
+            EventTagDTO eventTagDTO = new EventTagDTO();
+            eventTagDTO.setEvent(event);
+            model.addAttribute("eventTagDTO", eventTagDTO);
+            return "events/add-tag";
+        }
+        else {
+            // there should be some error handling here if the event for eventId is not found
+            return "events/add-tag";
+        }
+    }
+
+    @PostMapping("add-tag")
+    public String ProcessAddTagForm(@ModelAttribute @Valid EventTagDTO eventTagDTO,
+                                    Errors errors,
+                                    Model model ){
+
+        if (!errors.hasErrors()) {
+            Event event = eventTagDTO.getEvent();
+            Tag tag = eventTagDTO.getTag();
+
+            if (!event.getTags().contains(tag)) {
+                event.addTag(tag);
+                eventRepository.save(event);
+            }
+            return "redirect:detail?eventId=" + event.getId();
+        }
+        else {
+            // this needs better error handling
+            return "redirect:detail";
+        }
     }
 
 }
