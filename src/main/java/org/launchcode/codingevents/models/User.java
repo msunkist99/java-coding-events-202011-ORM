@@ -33,6 +33,9 @@ public class User extends AbstractEntity {
     }
 
     public boolean isMatchingPassword(String password) {
+        // Notice that we are using encoder.matches() rather than directly comparing hash values.
+        //  bcrypt internally uses a technique called salting, which requires additional steps before comparison.
+        //  These additional steps are carried out by encoder.matches()
         return encoder.matches(password, pwHash);
     }
 
